@@ -1,0 +1,68 @@
+{
+  "package": {
+    "fl64": {
+      "package": {
+        "web": {
+          "entity": {
+            "session": {
+              "comment": "Table storing information about user sessions.",
+              "attr": {
+                "id": {
+                  "type": "id",
+                  "comment": "Internal numeric identifier for the session.",
+                  "auto_increment": true
+                },
+                "uuid": {
+                  "type": "string",
+                  "comment": "Unique string identifier for the session (UUID)."
+                },
+                "user_ref": {
+                  "type": "ref",
+                  "comment": "Reference to the user who owns the session."
+                },
+                "user_ip": {
+                  "type": "string",
+                  "comment": "IP address from which the session was opened."
+                },
+                "user_agent": {
+                  "type": "text",
+                  "nullable": true,
+                  "comment": "Information about the client (browser, device). May be null if not provided."
+                },
+                "date_created": {
+                  "type": "datetime",
+                  "comment": "Timestamp of when the session was created.",
+                  "default": "current"
+                },
+                "date_expires": {
+                  "type": "datetime",
+                  "comment": "Timestamp of when the session will expire."
+                },
+                "date_last": {
+                  "type": "datetime",
+                  "comment": "Timestamp of the last activity in the session."
+                }
+              },
+              "index": {
+                "uuid": {
+                  "type": "unique",
+                  "attrs": ["uuid"]
+                }
+              },
+              "relation": {
+                "user": {
+                  "attrs": ["user_ref"],
+                  "ref": {"path": "/user", "attrs": ["id"]},
+                  "action": {"delete": "cascade", "update": "cascade"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "refs": {
+    "/user": ["id"]
+  }
+}

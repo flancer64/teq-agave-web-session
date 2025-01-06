@@ -1,0 +1,12 @@
+{
+  "ref": {
+    "@flancer64/teq-agave-web-session": {
+      "/user": {
+        "path": "/test/user",
+        "attrs": {
+          "id": "id"
+        }
+      }
+    }
+  }
+}

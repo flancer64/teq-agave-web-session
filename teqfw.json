@@ -1,0 +1,11 @@
+{
+  "@teqfw/di": {
+    "autoload": {
+      "ns": "Fl64_Web_Session",
+      "path": "./src"
+    }
+  },
+  "@teqfw/web": {
+    "handlers": {}
+  }
+}

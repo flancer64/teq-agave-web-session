@@ -1,0 +1,15 @@
+{
+  "package": {
+    "test": {
+      "entity": {
+        "user": {
+          "comment": "The registry of the app users.",
+          "attr": {
+            "id": {"type": "id"},
+            "name": {"type": "string", "comment": "User name."}
+          }
+        }
+      }
+    }
+  }
+}
