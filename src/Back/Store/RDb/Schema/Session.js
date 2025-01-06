@@ -101,9 +101,15 @@ export default class Fl64_Web_Session_Back_Store_RDb_Schema_Session {
     /**
      * Constructor for the Web Session persistent DTO class.
      *
+     * @param {Fl64_Web_Session_Back_Defaults} DEF
      * @param {TeqFw_Core_Shared_Util_Cast} cast - Utility for type casting.
      */
-    constructor({TeqFw_Core_Shared_Util_Cast$: cast}) {
+    constructor(
+        {
+            Fl64_Web_Session_Back_Defaults$: DEF,
+            TeqFw_Core_Shared_Util_Cast$: cast
+        }
+    ) {
         // INSTANCE METHODS
 
         /**
@@ -137,7 +143,7 @@ export default class Fl64_Web_Session_Back_Store_RDb_Schema_Session {
          *
          * @returns {string}
          */
-        this.getEntityName = () => ENTITY;
+        this.getEntityName = () => `${DEF.NAME}${ENTITY}`;
 
         /**
          * Returns the primary key attributes for the entity.
