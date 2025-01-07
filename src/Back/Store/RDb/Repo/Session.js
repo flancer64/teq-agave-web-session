@@ -51,6 +51,11 @@ export default class Fl64_Web_Session_Back_Store_RDb_Repo_Session {
         };
 
         /**
+         * @return {Fl64_Web_Session_Back_Store_RDb_Schema_Session}
+         */
+        this.getSchema = () => schema;
+
+        /**
          * @param {Object} params
          * @param {TeqFw_Db_Back_RDb_ITrans} [params.trx]
          * @param {Object} params.conditions

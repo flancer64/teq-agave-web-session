@@ -20,6 +20,9 @@ export default class Fl64_Web_Session_Back_Manager {
             Fl64_Web_Session_Back_Store_RDb_Repo_Session$: repoSess,
         }
     ) {
+        // VARS
+        const A_SESS = repoSess.getSchema().getAttributes();
+
         // FUNCS
 
         /**
@@ -91,5 +94,36 @@ export default class Fl64_Web_Session_Back_Manager {
             return {sessionId, sessionUuid};
         };
 
+        /**
+         * Retrieves the session ID from the HTTP request and fetches the session data from the database.
+         *
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} req - Incoming HTTP request.
+         * @param {TeqFw_Db_Back_RDb_ITrans} [trx] - Database transaction context.
+         * @returns {Promise<{dto:Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto}>} - The session data as a DTO, or null if no valid session is found.
+         */
+        this.getSessionFromRequest = async function ({req, trx}) {
+            let dto = null;
+            const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
+            if (sessionUuid) {
+                const activeTrx = trx ?? await conn.startTransaction();
+                try {
+                    // Fetch session from the database by UUID
+                    const key = {[A_SESS.UUID]: sessionUuid};
+                    const {record} = await repoSess.readOne({trx: activeTrx, key});
+                    if (!trx) await activeTrx.commit();
+                    if (!record)
+                        logger.info(`Session not found for session ID: ${sessionUuid}`);
+                    else
+                        dto = record;
+                } catch (error) {
+                    if (!trx) await activeTrx.rollback();
+                    logger.error(`Error retrieving session from request: ${error.message}`);
+                    throw error;
+                }
+            } else {
+                logger.info('No sessionId found in the cookies.');
+            }
+            return {dto};
+        };
     }
 }
