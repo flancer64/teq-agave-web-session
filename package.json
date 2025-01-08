@@ -21,9 +21,10 @@
   },
   "dependencies": {
     "@teqfw/db": ">=0.22.1 <1.0.0",
-    "@teqfw/web-api": ">=0.21.0 <1.0.0"
+    "@teqfw/web": ">=0.25.0 <1.0.0"
   },
   "devDependencies": {
+    "@teqfw/test": ">=0.20.1 <1.0.0",
     "better-sqlite3": "latest",
     "dotenv": "latest",
     "mocha": "latest"

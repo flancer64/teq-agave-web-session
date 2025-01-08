@@ -1,7 +1,7 @@
 {
   "@teqfw/di": {
     "autoload": {
-      "ns": "Fl64_Web_Session",
+      "ns": "Fl64_Web_Session_",
       "path": "./src"
     }
   },

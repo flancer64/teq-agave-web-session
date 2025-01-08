@@ -2,11 +2,13 @@ import {container} from '@teqfw/test';
 import assert from 'assert';
 
 // GET OBJECTS FROM CONTAINER
+/** @type {Fl64_Web_Session_Back_Defaults} */
+const DEF = await container.get('Fl64_Web_Session_Back_Defaults$');
 /** @type {Fl64_Web_Session_Back_Store_RDb_Schema_Session} */
-const rdbDto = await container.get('Fl64_Web_Session_Back_Store_RDb_Schema_Session$');
+const schema = await container.get('Fl64_Web_Session_Back_Store_RDb_Schema_Session$');
 
 describe('Fl64_Web_Session_Back_Store_RDb_Schema_Session', () => {
-    const ATTR = rdbDto.getAttributes();
+    const ATTR = schema.getAttributes();
     const expectedProperties = [
         'date_created',
         'date_expires',
@@ -19,7 +21,7 @@ describe('Fl64_Web_Session_Back_Store_RDb_Schema_Session', () => {
     ];
 
     it('should create an RDB DTO with only the expected properties', () => {
-        const dto = rdbDto.createDto();
+        const dto = schema.createDto();
         const dtoKeys = Object.keys(dto).sort();
 
         // Verify that the DTO has only the expected properties
@@ -45,7 +47,7 @@ describe('Fl64_Web_Session_Back_Store_RDb_Schema_Session', () => {
     });
 
     it('should have the correct ENTITY name and primary key', () => {
-        assert.equal(rdbDto.getEntityName(), '/fl64/web/session', 'Entity name should match the expected path');
-        assert.deepStrictEqual(rdbDto.getPrimaryKey(), [ATTR.ID], 'Primary key should be set to ID');
+        assert.equal(schema.getEntityName(), `${DEF.NAME}/fl64/web/session`, 'Entity name should match the expected path');
+        assert.deepStrictEqual(schema.getPrimaryKey(), [ATTR.ID], 'Primary key should be set to ID');
     });
 });
