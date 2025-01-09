@@ -15,7 +15,6 @@ const ENTITY = '/fl64/web/session';
 /**
  * Attribute mappings for the entity.
  * @memberOf Fl64_Web_Session_Back_Store_RDb_Schema_Session
- * @type {Object}
  */
 const ATTR = {
     DATE_CREATED: 'date_created',
@@ -102,7 +101,7 @@ export default class Fl64_Web_Session_Back_Store_RDb_Schema_Session {
      * Constructor for the Web Session persistent DTO class.
      *
      * @param {Fl64_Web_Session_Back_Defaults} DEF
-     * @param {TeqFw_Core_Shared_Util_Cast} cast - Utility for type casting.
+     * @param {TeqFw_Core_Shared_Util_Cast} cast
      */
     constructor(
         {
@@ -131,10 +130,11 @@ export default class Fl64_Web_Session_Back_Store_RDb_Schema_Session {
             return res;
         };
 
+        // noinspection JSCheckFunctionSignatures
         /**
          * Returns the attribute map for the entity.
          *
-         * @returns {Object}
+         * @returns {typeof Fl64_Web_Session_Back_Store_RDb_Schema_Session.ATTR}
          */
         this.getAttributes = () => ATTR;
 
