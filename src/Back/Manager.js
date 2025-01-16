@@ -42,18 +42,40 @@ export default class Fl64_Web_Session_Back_Manager {
         };
 
         // MAIN
+        /**
+         * @param {Object} params
+         * @param {TeqFw_Db_Back_RDb_ITrans} [params.trx] - The database transaction context to ensure atomic operations.
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object associated with the user's action.
+         * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.res - The HTTP response object for setting cookies or headers related to the session.
+         * @return {Promise<void>}
+         */
+        this.close = async function ({trx: trxOuter, req, res}) {
+            const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
+            if (sessionUuid) {
+                const cached = memSession.get({key: sessionUuid});
+                if (cached) memSession.delete({key: sessionUuid});
+                await trxWrapper.execute(trxOuter, async (trx) => {
+                    const key = {[A_SESS.UUID]: sessionUuid};
+                    const {record} = await repoSess.readOne({trx, key});
+                    if (record) await repoSess.deleteOne({trx, key});
+                });
+            }
+        };
 
         /**
          * Establishes a new session for the user.
+         *
+         * TODO: use `req` & `res` instead of `httpRe...`
+         *
          * @param {Object} params
+         * @param {TeqFw_Db_Back_RDb_ITrans} params.trx - The database transaction context to ensure atomic operations.
          * @param {number} params.userId - The unique identifier of the user.
          * @param {number} [params.lifetime] - The lifetime of the session in seconds. Defaults to the configured session lifetime if not provided.
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.httpRequest - The HTTP request object associated with the user's action.
          * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.httpResponse - The HTTP response object for setting cookies or headers related to the session.
-         * @param {TeqFw_Db_Back_RDb_ITrans} params.trx - The database transaction context to ensure atomic operations.
          * @returns {Promise<{sessionId: number, sessionUuid: string, sessionData: Object}>}
          */
-        this.establishSession = async function ({userId, lifetime, httpRequest, httpResponse, trx: trxOuter}) {
+        this.establish = async function ({trx: trxOuter, userId, lifetime, httpRequest, httpResponse}) {
             let sessionId, sessionUuid, sessionData;
             if (userId) {
                 await trxWrapper.execute(trxOuter, async (trx) => {
@@ -99,12 +121,11 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Retrieves the session ID from the HTTP request and fetches the session data from the database.
          *
-         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} req - Incoming HTTP request.
          * @param {TeqFw_Db_Back_RDb_ITrans} [trx] - Database transaction context.
-         *
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} req - Incoming HTTP request.
          * @returns {Promise<{dto:Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto, sessionData:Object}>} - The session DTO & data, or null if no valid session is found.
          */
-        this.getSessionFromRequest = async function ({req, trx: trxOuter}) {
+        this.getFromRequest = async function ({trx: trxOuter, req}) {
             let dto = null, sessionData = null;
             const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
             if (sessionUuid) {
