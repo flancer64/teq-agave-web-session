@@ -121,8 +121,9 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Retrieves the session ID from the HTTP request and fetches the session data from the database.
          *
-         * @param {TeqFw_Db_Back_RDb_ITrans} [trx] - Database transaction context.
-         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} req - Incoming HTTP request.
+         * @param {Object} params - Database transaction context.
+         * @param {TeqFw_Db_Back_RDb_ITrans} [params.trx] - Database transaction context.
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - Incoming HTTP request.
          * @returns {Promise<{dto:Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto, sessionData:Object}>} - The session DTO & data, or null if no valid session is found.
          */
         this.getFromRequest = async function ({trx: trxOuter, req}) {
