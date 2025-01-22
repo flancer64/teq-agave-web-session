@@ -158,5 +158,15 @@ export default class Fl64_Web_Session_Back_Manager {
             }
             return {dto, sessionData};
         };
+
+        /**
+         * Update session data in memory storage.
+         * @param {{dto:Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto, sessionData:*}} session
+         * @return {Promise<void>}
+         */
+        this.updateSessionData = async function ({session}) {
+            const {dto, sessionData: data} = session;
+            memSession.set({key: dto.uuid, data: [dto, data], expiresAt: dto.date_expires.getTime()});
+        };
     }
 }
