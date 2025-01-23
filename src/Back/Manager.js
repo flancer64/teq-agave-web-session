@@ -65,23 +65,26 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Establishes a new session for the user.
          *
-         * TODO: use `req` & `res` instead of `httpRe...`
-         *
          * @param {Object} params
          * @param {TeqFw_Db_Back_RDb_ITrans} params.trx - The database transaction context to ensure atomic operations.
          * @param {number} params.userId - The unique identifier of the user.
          * @param {number} [params.lifetime] - The lifetime of the session in seconds. Defaults to the configured session lifetime if not provided.
-         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.httpRequest - The HTTP request object associated with the user's action.
-         * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.httpResponse - The HTTP response object for setting cookies or headers related to the session.
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.httpRequest - deprecated
+         * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.httpResponse - deprecated
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object associated with the user's action.
+         * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.res - The HTTP response object for setting cookies or headers related to the session.
          * @returns {Promise<{sessionId: number, sessionUuid: string, sessionData: Object}>}
          */
-        this.establish = async function ({trx: trxOuter, userId, lifetime, httpRequest, httpResponse}) {
+        this.establish = async function ({trx: trxOuter, userId, lifetime, httpRequest, httpResponse, req, res}) {
             let sessionId, sessionUuid, sessionData;
             if (userId) {
+                const request = req || httpRequest; // Fallback to deprecated parameter
+                const response = res || httpResponse; // Fallback to deprecated parameter
+
                 await trxWrapper.execute(trxOuter, async (trx) => {
                     // Prepare session data (IP address, user-agent, ...)
-                    const ipAddress = httpRequest.headers['x-forwarded-for']?.split(',')[0]?.trim() || httpRequest.socket.remoteAddress;
-                    const userAgent = httpRequest.headers['user-agent'];
+                    const ipAddress = request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress;
+                    const userAgent = request.headers['user-agent'];
                     const now = new Date();
                     // compose session DTO and create DB record
                     /** @type {Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto} */
@@ -105,7 +108,7 @@ export default class Fl64_Web_Session_Back_Manager {
                         sameSite: 'None',
                         value: dto.uuid,
                     });
-                    utilCookie.set({response: httpResponse, cookie});
+                    utilCookie.set({response, cookie});
                     memSession.set({key: dto.uuid, data: [dto, data], expiresAt: dto.date_expires.getTime()});
                     logger.info(`New session is established for user #${dto.user_ref} from IP ${dto.user_ip}`);
                     sessionId = dto.id;
@@ -157,6 +160,18 @@ export default class Fl64_Web_Session_Back_Manager {
                 logger.info('No sessionId found in the cookies.');
             }
             return {dto, sessionData};
+        };
+
+        /**
+         * Checks if the HTTP request contains session data.
+         *
+         * @param {Object} params - Parameters for checking the session.
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object.
+         * @returns {boolean} - True if a session exists, otherwise false.
+         */
+        this.hasSession = function ({req}) {
+            const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
+            return !!sessionUuid;
         };
 
         /**
