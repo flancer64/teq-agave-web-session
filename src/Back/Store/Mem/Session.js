@@ -40,22 +40,21 @@ export default class Fl64_Web_Session_Back_Store_Mem_Session {
 
         // MAIN
         /**
-         * Saves a session with a unique ID and expiration time.
+         * Saves a session with a unique UUID and expiration time.
          * @param {Object} params
-         * @param {string|number} params.key - Session ID.
+         * @param {string|number} params.key - Session UUID.
          * @param {Object} params.data - Session details.
          * @param {number} [params.expiresAt] - Expiration timestamp. Defaults to 1 hour from now.
          */
         this.set = function ({key, data, expiresAt}) {
             if (!expiresAt) expiresAt = Date.now() + 3600 * 1000; // Default 1 hour
             store.set(key, {data, expiresAt});
-            logger.info(`Session stored with ID: ${key}, expires at: ${new Date(expiresAt).toISOString()}`);
         };
 
         /**
-         * Retrieves session details by ID.
+         * Retrieves session details by UUID.
          * @param {Object} params
-         * @param {string} params.key - Session ID.
+         * @param {string} params.key - Session UUID.
          * @returns {Object|null} - Session details or null if not found/expired.
          */
         this.get = function ({key}) {
@@ -66,23 +65,20 @@ export default class Fl64_Web_Session_Back_Store_Mem_Session {
                     result = entry.data;
                 } else {
                     store.delete(key);
-                    logger.info(`Session expired for ID: ${key}`);
+                    logger.info(`Session is expired for UUID: ${key}`);
                 }
-            } else {
-                logger.info(`Session not found for ID: ${key}`);
             }
-
             return result;
         };
 
         /**
-         * Deletes a session by ID.
+         * Deletes a session by UUID.
          * @param {Object} params
-         * @param {string} params.key - Session ID.
+         * @param {string} params.key - Session UUID.
          */
         this.delete = function ({key}) {
             if (store.delete(key)) {
-                logger.info(`Session removed for ID: ${key}`);
+                logger.info(`Session removed for UUID: ${key}`);
             } else {
                 logger.info(`Session not found for removal: ${key}`);
             }

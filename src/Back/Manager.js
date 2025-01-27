@@ -50,14 +50,24 @@ export default class Fl64_Web_Session_Back_Manager {
          * @return {Promise<void>}
          */
         this.close = async function ({trx: trxOuter, req, res}) {
-            const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
-            if (sessionUuid) {
-                const cached = memSession.get({key: sessionUuid});
-                if (cached) memSession.delete({key: sessionUuid});
+            const uuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
+            if (uuid) {
+                const cookie = utilCookie.clear({name: DEF.COOKIE_SESSION});
+                utilCookie.set({response: res, cookie});
+                const cached = memSession.get({key: uuid});
+                if (cached) {
+                    memSession.delete({key: uuid});
+                    logger.info(`User session '${uuid}' is deleted from the memory cache.`);
+                } else {
+                    logger.info(`User session '${uuid}' is not found in the memory cache.`);
+                }
                 await trxWrapper.execute(trxOuter, async (trx) => {
-                    const key = {[A_SESS.UUID]: sessionUuid};
+                    const key = {[A_SESS.UUID]: uuid};
                     const {record} = await repoSess.readOne({trx, key});
-                    if (record) await repoSess.deleteOne({trx, key});
+                    if (record) {
+                        await repoSess.deleteOne({trx, key});
+                        logger.info(`User session '${uuid}' is deleted from DB.`);
+                    }
                 });
             }
         };
@@ -131,28 +141,33 @@ export default class Fl64_Web_Session_Back_Manager {
          */
         this.getFromRequest = async function ({trx: trxOuter, req}) {
             let dto = null, sessionData = null;
-            const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
-            if (sessionUuid) {
-                const cached = memSession.get({key: sessionUuid});
+            const uuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
+            if (uuid) {
+                const cached = memSession.get({key: uuid});
                 if (cached) {
                     dto = cached[0];
                     sessionData = cached[1];
                 } else {
                     await trxWrapper.execute(trxOuter, async (trx) => {
                         // Fetch session from the database by UUID
-                        const key = {[A_SESS.UUID]: sessionUuid};
+                        const key = {[A_SESS.UUID]: uuid};
                         const {record} = await repoSess.readOne({trx, key});
                         if (!record)
-                            logger.info(`Session not found for session ID: ${sessionUuid}`);
+                            // don't log session UUID for established sessions
+                            logger.info(`Session not found for session UUID: ${uuid}`);
                         else {
                             dto = record;
                             const {data} = await serviceUserDataProvider.perform({trx, userId: record.user_ref});
                             sessionData = data;
-                            memSession.set({
-                                key: sessionUuid,
-                                data: [dto, sessionData],
-                                expiresAt: dto.date_expires.getTime()
-                            });
+                            const foundInCache = memSession.get({key: uuid});
+                            if (!foundInCache) {
+                                memSession.set({
+                                    key: uuid,
+                                    data: [dto, sessionData],
+                                    expiresAt: dto.date_expires.getTime()
+                                });
+                                logger.info(`User session #${dto.id} is loaded into the memory cache.`);
+                            }
                         }
                     });
                 }
