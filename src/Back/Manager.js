@@ -79,8 +79,8 @@ export default class Fl64_Web_Session_Back_Manager {
          * @param {TeqFw_Db_Back_RDb_ITrans} params.trx - The database transaction context to ensure atomic operations.
          * @param {number} params.userId - The unique identifier of the user.
          * @param {number} [params.lifetime] - The lifetime of the session in seconds. Defaults to the configured session lifetime if not provided.
-         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.httpRequest - deprecated
-         * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.httpResponse - deprecated
+         * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} [params.httpRequest] - deprecated
+         * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} [params.httpResponse] - deprecated
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object associated with the user's action.
          * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.res - The HTTP response object for setting cookies or headers related to the session.
          * @returns {Promise<{sessionId: number, sessionUuid: string, sessionData: Object}>}
