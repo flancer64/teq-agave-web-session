@@ -118,14 +118,14 @@ export default class Fl64_Web_Session_Back_Store_RDb_Schema_Session {
         this.createDto = function (data) {
             const res = new Dto();
             if (data) {
-                res.date_created = cast.date(data?.date_created);
-                res.date_expires = cast.date(data?.date_expires);
-                res.date_last = cast.date(data?.date_last);
-                res.id = cast.int(data?.id);
-                res.user_agent = cast.string(data?.user_agent);
-                res.user_ip = cast.string(data?.user_ip);
-                res.user_ref = cast.int(data?.user_ref);
-                res.uuid = cast.string(data?.uuid);
+                res.date_created = cast.date(data.date_created);
+                res.date_expires = cast.date(data.date_expires);
+                res.date_last = cast.date(data.date_last);
+                res.id = cast.int(data.id);
+                res.user_agent = cast.string(data.user_agent);
+                res.user_ip = cast.string(data.user_ip);
+                res.user_ref = cast.int(data.user_ref);
+                res.uuid = cast.string(data.uuid);
             }
             return res;
         };
