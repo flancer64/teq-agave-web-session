@@ -13,10 +13,10 @@ export default class Fl64_Web_Session_Back_Store_RDb_Repo_Session {
         }
     ) {
         /**
-         * @param {Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto} [dto]
+         * @param {Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto} [data]
          * @returns {Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto}
          */
-        this.createDto = schema.createDto;
+        this.createDto = (data) => schema.createDto(data);
 
         /**
          * @param {Object} params
