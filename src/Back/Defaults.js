@@ -2,6 +2,7 @@
  * Plugin constants (hardcoded configuration) for frontend code.
  */
 export default class Fl64_Web_Session_Back_Defaults {
+    COOKIE_REDIRECT = 'teq_redirect';
     COOKIE_SESSION = 'teq_session';
 
     /** @type {TeqFw_Web_Back_Defaults} */

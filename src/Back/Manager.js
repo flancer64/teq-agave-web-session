@@ -1,5 +1,14 @@
 import {randomUUID} from 'crypto';
+import {constants as H2} from 'node:http2';
 
+// VARS
+const {
+    HTTP2_HEADER_SET_COOKIE,
+} = H2;
+
+const COOKIE_LIFETIME_REDIRECT = 3600; // 1 hour
+
+// MAIN
 /**
  * Manager for user sessions, providing methods to create, validate, and terminate sessions.
  */
@@ -10,6 +19,7 @@ export default class Fl64_Web_Session_Back_Manager {
      * @param {TeqFw_Web_Back_Util_Cookie} utilCookie
      * @param {TeqFw_Db_Back_App_TrxWrapper} trxWrapper - Database transaction wrapper
      * @param {Fl64_Web_Session_Back_Store_RDb_Repo_Session} repoSess
+     * @param {Fl64_Web_Session_Back_Store_Mem_RedirectUrl} memRedirectUrl
      * @param {Fl64_Web_Session_Back_Store_Mem_Session} memSession
      * @param {Fl64_Web_Session_Back_Api_Service_UserDataProvider} serviceUserDataProvider
      */
@@ -20,6 +30,7 @@ export default class Fl64_Web_Session_Back_Manager {
             TeqFw_Web_Back_Util_Cookie$: utilCookie,
             TeqFw_Db_Back_App_TrxWrapper$: trxWrapper,
             Fl64_Web_Session_Back_Store_RDb_Repo_Session$: repoSess,
+            Fl64_Web_Session_Back_Store_Mem_RedirectUrl$: memRedirectUrl,
             Fl64_Web_Session_Back_Store_Mem_Session$: memSession,
             Fl64_Web_Session_Back_Api_Service_UserDataProvider$: serviceUserDataProvider,
         }
@@ -187,6 +198,47 @@ export default class Fl64_Web_Session_Back_Manager {
         this.hasSession = function ({req}) {
             const sessionUuid = utilCookie.get({request: req, cookie: DEF.COOKIE_SESSION});
             return !!sessionUuid;
+        };
+
+        /**
+         * Retrieves the redirect URL from memory and optionally removes it.
+         *
+         * @param {Object} params - The parameters for the function.
+         * @param {module:http.IncomingMessage} params.req - The incoming HTTP request.
+         * @param {boolean} [params.remove=false] - Whether to remove the redirect URL after retrieval.
+         * @returns {Promise<{url: string | null}>} The URL associated with the redirect, or null if not found.
+         */
+        this.retrieveRedirectUrl = async function ({req, remove = false}) {
+            let url = null;
+            const key = utilCookie.get({request: req, cookie: DEF.COOKIE_REDIRECT});
+            if (key) {
+                url = memRedirectUrl.get({key});
+                if (url && remove) memRedirectUrl.delete({key});
+            }
+            return {url};
+        };
+
+        /**
+         * Stores the redirect URL in memory and composes a cookie for it.
+         *
+         * @param {Object} params - The parameters for the function.
+         * @param {string} params.redirectUrl - The redirect URL to be stored.
+         * @returns {Promise<{headers: Object}>} The headers, including the set-cookie header with the redirect key.
+         */
+        this.storeRedirectUrl = async function ({redirectUrl}) {
+            const key = randomUUID();
+            await memRedirectUrl.set({key, redirectUrl});
+            const cookie = utilCookie.create({
+                expires: COOKIE_LIFETIME_REDIRECT, // Max-Age: 3600 sec.
+                name: DEF.COOKIE_REDIRECT,
+                path: '/',
+                sameSite: 'None',
+                value: key,
+            });
+            const headers = {
+                [HTTP2_HEADER_SET_COOKIE]: cookie,
+            };
+            return {headers};
         };
 
         /**

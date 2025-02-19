@@ -5,6 +5,12 @@
       "path": "./src"
     }
   },
+  "@teqfw/core": {
+    "plugin": {
+      "onInit": "Fl64_Web_Session_Back_Plugin_Start",
+      "onStop": "Fl64_Web_Session_Back_Plugin_Stop"
+    }
+  },
   "@teqfw/web": {
     "handlers": {}
   }
