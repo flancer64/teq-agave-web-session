@@ -1,19 +1,10 @@
-import {randomUUID} from 'crypto';
-import {constants as H2} from 'node:http2';
-
-// VARS
-const {
-    HTTP2_HEADER_SET_COOKIE,
-} = H2;
-
-const COOKIE_LIFETIME_REDIRECT = 3600; // 1 hour
-
-// MAIN
 /**
  * Manager for user sessions, providing methods to create, validate, and terminate sessions.
  */
 export default class Fl64_Web_Session_Back_Manager {
     /**
+     * @param {typeof import('node:crypto')} crypto
+     * @param {typeof import('node:http2')} http2
      * @param {Fl64_Web_Session_Back_Defaults} DEF
      * @param {TeqFw_Core_Shared_Api_Logger} logger - instance
      * @param {TeqFw_Web_Back_Util_Cookie} utilCookie
@@ -25,6 +16,8 @@ export default class Fl64_Web_Session_Back_Manager {
      */
     constructor(
         {
+            'node:crypto': crypto,
+            'node:http2': http2,
             Fl64_Web_Session_Back_Defaults$: DEF,
             TeqFw_Core_Shared_Api_Logger$$: logger,
             TeqFw_Web_Back_Util_Cookie$: utilCookie,
@@ -36,6 +29,12 @@ export default class Fl64_Web_Session_Back_Manager {
         }
     ) {
         // VARS
+        const {
+            HTTP2_HEADER_SET_COOKIE,
+        } = http2.constants;
+        const {randomUUID} = crypto;
+
+        const COOKIE_LIFETIME_REDIRECT = 3600; // 1 hour
         const A_SESS = repoSess.getSchema().getAttributes();
 
         // FUNCS
