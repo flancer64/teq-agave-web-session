@@ -8,6 +8,10 @@ export default class Fl64_Web_Session_Shared_Defaults {
     /** @type {TeqFw_Web_Shared_Defaults} */
     MOD_WEB;
 
+    ROUTE_LOGOUT = 'logout';
+
+    SPACE = 'fl64-web-session';
+
     constructor(
         {
             TeqFw_Web_Shared_Defaults$: MOD_WEB

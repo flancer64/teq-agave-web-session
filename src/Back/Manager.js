@@ -181,8 +181,6 @@ export default class Fl64_Web_Session_Back_Manager {
                         }
                     });
                 }
-            } else {
-                logger.info('No sessionId found in the cookies.');
             }
             return {dto, sessionData};
         };
