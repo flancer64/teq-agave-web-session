@@ -4,7 +4,7 @@ A TeqFW plugin for managing user sessions in web services, ensuring secure creat
 
 ## Interfaces to Implement
 
-- `Fl64_Web_Session_Back_Api_Service_UserDataProvider`
+- `Fl64_Web_Session_Back_Api_Adapter`
 
 ## Web Routes
 

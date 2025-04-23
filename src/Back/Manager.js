@@ -12,7 +12,7 @@ export default class Fl64_Web_Session_Back_Manager {
      * @param {Fl64_Web_Session_Back_Store_RDb_Repo_Session} repoSess
      * @param {Fl64_Web_Session_Back_Store_Mem_RedirectUrl} memRedirectUrl
      * @param {Fl64_Web_Session_Back_Store_Mem_Session} memSession
-     * @param {Fl64_Web_Session_Back_Api_Service_UserDataProvider} serviceUserDataProvider
+     * @param {Fl64_Web_Session_Back_Api_Adapter} adapter
      */
     constructor(
         {
@@ -25,7 +25,7 @@ export default class Fl64_Web_Session_Back_Manager {
             Fl64_Web_Session_Back_Store_RDb_Repo_Session$: repoSess,
             Fl64_Web_Session_Back_Store_Mem_RedirectUrl$: memRedirectUrl,
             Fl64_Web_Session_Back_Store_Mem_Session$: memSession,
-            Fl64_Web_Session_Back_Api_Service_UserDataProvider$: serviceUserDataProvider,
+            Fl64_Web_Session_Back_Api_Adapter$: adapter,
         }
     ) {
         // VARS
@@ -53,7 +53,7 @@ export default class Fl64_Web_Session_Back_Manager {
 
         // MAIN
         /**
-         * @param {Object} params
+         * @param {object} params
          * @param {TeqFw_Db_Back_RDb_ITrans} [params.trx] - The database transaction context to ensure atomic operations.
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object associated with the user's action.
          * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.res - The HTTP response object for setting cookies or headers related to the session.
@@ -85,7 +85,7 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Establishes a new session for the user.
          *
-         * @param {Object} params
+         * @param {object} params
          * @param {TeqFw_Db_Back_RDb_ITrans} params.trx - The database transaction context to ensure atomic operations.
          * @param {number} params.userId - The unique identifier of the user.
          * @param {number} [params.lifetime] - The lifetime of the session in seconds. Defaults to the configured session lifetime if not provided.
@@ -93,10 +93,10 @@ export default class Fl64_Web_Session_Back_Manager {
          * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} [params.httpResponse] - deprecated
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object associated with the user's action.
          * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} params.res - The HTTP response object for setting cookies or headers related to the session.
-         * @returns {Promise<{sessionId: number, sessionUuid: string, sessionData: Object}>}
+         * @returns {Promise<{sessionId: number, sessionUuid: string, sessionData: object, redirectUri:string}>}
          */
         this.establish = async function ({trx: trxOuter, userId, lifetime, httpRequest, httpResponse, req, res}) {
-            let sessionId, sessionUuid, sessionData;
+            let sessionId, sessionUuid, sessionData, redirectUri;
             if (userId) {
                 const request = req || httpRequest; // Fallback to deprecated parameter
                 const response = res || httpResponse; // Fallback to deprecated parameter
@@ -106,7 +106,7 @@ export default class Fl64_Web_Session_Back_Manager {
                     const ipAddress = request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress;
                     const userAgent = request.headers['user-agent'];
                     const now = new Date();
-                    // compose session DTO and create DB record
+                    // compose session DTO and create a DB record
                     /** @type {Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto} */
                     const dto = repoSess.createDto();
                     dto.date_created = now;
@@ -119,32 +119,37 @@ export default class Fl64_Web_Session_Back_Manager {
                     const {primaryKey} = await repoSess.createOne({trx, dto});
                     dto.id = primaryKey[A_SESS.ID];
                     // get session data related to a project that uses this session manager
-                    const {data} = await serviceUserDataProvider.perform({trx, userId});
-                    // create and set cookie
-                    const cookie = utilCookie.create({
-                        expires: dto.date_expires,
-                        name: DEF.COOKIE_SESSION,
-                        path: '/',
-                        sameSite: 'None',
-                        value: dto.uuid,
-                    });
-                    utilCookie.set({response, cookie});
-                    memSession.set({key: dto.uuid, data: [dto, data], expiresAt: dto.date_expires.getTime()});
-                    logger.info(`New session is established for user #${dto.user_ref} from IP ${dto.user_ip}`);
-                    sessionId = dto.id;
-                    sessionUuid = dto.uuid;
-                    sessionData = data;
+                    const {data, allowed, redirectUri: uriOnDisallow} = await adapter.retrieveUserData({trx, userId});
+                    if (allowed) {
+                        // create and set cookie
+                        const cookie = utilCookie.create({
+                            expires: dto.date_expires,
+                            name: DEF.COOKIE_SESSION,
+                            path: '/',
+                            sameSite: 'None',
+                            value: dto.uuid,
+                        });
+                        utilCookie.set({response, cookie});
+                        memSession.set({key: dto.uuid, data: [dto, data], expiresAt: dto.date_expires.getTime()});
+                        logger.info(`New session is established for user #${dto.user_ref} from IP ${dto.user_ip}`);
+                        sessionId = dto.id;
+                        sessionUuid = dto.uuid;
+                        sessionData = data;
+                    } else {
+                        redirectUri = uriOnDisallow;
+                        logger.error(`Cannot establish a session for user #${userId} because the user is not allowed to use this session manager.`);
+                    }
                 });
             } else {
                 logger.error(`Cannot establish a session for user w/o ID.`);
             }
-            return {sessionId, sessionUuid, sessionData};
+            return {sessionId, sessionUuid, sessionData, redirectUri};
         };
 
         /**
          * Retrieves the session ID from the HTTP request and fetches the session data from the database.
          *
-         * @param {Object} params - Database transaction context.
+         * @param {object} params - Database transaction context.
          * @param {TeqFw_Db_Back_RDb_ITrans} [params.trx] - Database transaction context.
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - Incoming HTTP request.
          * @returns {Promise<{dto:Fl64_Web_Session_Back_Store_RDb_Schema_Session.Dto, sessionData:*}>} - The session DTO & data, or null if no valid session is found.
@@ -167,7 +172,7 @@ export default class Fl64_Web_Session_Back_Manager {
                             logger.info(`Session not found for session UUID: ${uuid}`);
                         else {
                             dto = record;
-                            const {data} = await serviceUserDataProvider.perform({trx, userId: record.user_ref});
+                            const {data} = await adapter.retrieveUserData({trx, userId: record.user_ref});
                             sessionData = data;
                             const foundInCache = memSession.get({key: uuid});
                             if (!foundInCache) {
@@ -188,7 +193,7 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Checks if the HTTP request contains session data.
          *
-         * @param {Object} params - Parameters for checking the session.
+         * @param {object} params - Parameters for checking the session.
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} params.req - The HTTP request object.
          * @returns {boolean} - True if a session exists, otherwise false.
          */
@@ -200,7 +205,7 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Retrieves the redirect URL from memory and optionally removes it.
          *
-         * @param {Object} params - The parameters for the function.
+         * @param {object} params - The parameters for the function.
          * @param {module:http.IncomingMessage} params.req - The incoming HTTP request.
          * @param {boolean} [params.remove=false] - Whether to remove the redirect URL after retrieval.
          * @returns {Promise<{url: string | null}>} The URL associated with the redirect, or null if not found.
@@ -218,7 +223,7 @@ export default class Fl64_Web_Session_Back_Manager {
         /**
          * Stores the redirect URL in memory and composes a cookie for it.
          *
-         * @param {Object} params - The parameters for the function.
+         * @param {object} params - The parameters for the function.
          * @param {string} params.redirectUrl - The redirect URL to be stored.
          * @returns {Promise<{headers: Object}>} The headers, including the set-cookie header with the redirect key.
          */
