@@ -28,13 +28,14 @@ export default class Fl64_Web_Session_Back_Web_Handler_A_Logout {
          * @param {module:http.IncomingMessage|module:http2.Http2ServerRequest} req - Incoming HTTP request
          * @param {module:http.ServerResponse|module:http2.Http2ServerResponse} res - HTTP response object
          *
-         * @return {Promise<void>}
+         * @return {Promise<boolean>}
          */
         this.run = async function (req, res) {
             await session.close({req, res});
             respond.code303_SeeOther({
                 res, headers: {[HTTP2_HEADER_LOCATION]: '/'}
             });
+            return true;
         };
     }
 }
